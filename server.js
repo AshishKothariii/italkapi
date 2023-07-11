@@ -128,7 +128,7 @@ app.post("/register", async (req, res) => {
     res.status(500).json("error");
   }
 });
-const PORT = process.env.PORT || 4040;
+const PORT = process.env.PORT;
 
 const server = app.listen(PORT);
 
