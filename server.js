@@ -9,6 +9,7 @@ const User = require("./models/User");
 const Message = require("./models/Message");
 const ws = require("ws");
 const fs = require("fs");
+const { Configuration, OpenAIApi } = require("openai");
 
 dotenv.config();
 mongoose.connect(
@@ -27,6 +28,13 @@ app.use(
     origin: process.env.CLIENT_URL,
   })
 );
+const configuration = new Configuration({
+  apiKey: process.env.OPEN_AI_KEY,
+});
+const openai = new OpenAIApi(configuration);
+app.get("/", (req, res) => {
+  res.send("hello");
+});
 
 async function getUserDataFromRequest(req) {
   return new Promise((resolve, reject) => {
@@ -126,6 +134,45 @@ app.post("/register", async (req, res) => {
   } catch (err) {
     if (err) throw err;
     res.status(500).json("error");
+  }
+});
+app.post("/myreq", async (req, res) => {
+  const { sender, recipient, text } = req.body;
+  const mydata = await openai.createCompletion({
+    model: "text-davinci-003",
+    prompt: `
+              ${text}
+      
+              ###
+            `,
+    max_tokens: 64,
+    temperature: 0,
+    top_p: 1.0,
+    frequency_penalty: 0.0,
+    presence_penalty: 0.0,
+    stop: ["\n"],
+  });
+  const messageDoc = await Message.create({
+    sender: recipient,
+    recipient: sender,
+    text: mydata.data.choices[0].text,
+    file: null,
+  });
+  [...wss.clients].forEach((c) =>
+    c.send(
+      JSON.stringify({
+        text: mydata.data.choices[0].text,
+        sender: recipient,
+        recipient: sender,
+        file: file ? filename : null,
+        _id: messageDoc._id,
+      })
+    )
+  );
+  try {
+    res.send("ok");
+  } catch (err) {
+    res.send("sorry bad request");
   }
 });
 const PORT = process.env.PORT;
