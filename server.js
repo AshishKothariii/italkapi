@@ -160,7 +160,7 @@ app.post("/myreq", async (req, res) => {
   });
   console.log(mydata.data.choices[0].text);
 
-  res.send("ok");
+  res.send(mydata.data.choices[0].text);
 });
 const PORT = process.env.PORT;
 
