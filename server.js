@@ -158,22 +158,9 @@ app.post("/myreq", async (req, res) => {
     text: mydata.data.choices[0].text,
     file: null,
   });
-  [...wss.clients].forEach((c) =>
-    c.send(
-      JSON.stringify({
-        text: mydata.data.choices[0].text,
-        sender: recipient,
-        recipient: sender,
-        file: file ? filename : null,
-        _id: messageDoc._id,
-      })
-    )
-  );
-  try {
-    res.send("ok");
-  } catch (err) {
-    res.send("sorry bad request");
-  }
+  console.log(mydata.data.choices[0].text);
+
+  res.send("ok");
 });
 const PORT = process.env.PORT;
 
