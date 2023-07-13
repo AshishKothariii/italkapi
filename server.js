@@ -9,12 +9,11 @@ const User = require("./models/User");
 const Message = require("./models/Message");
 const ws = require("ws");
 const fs = require("fs");
-const { Configuration, OpenAIApi } = require("openai");
 
 dotenv.config();
-mongoose.connect(
-  "mongodb+srv://ashishjain3967:Ashish@cluster0.xnp3i0r.mongodb.net/mydb?retryWrites=true&w=majority"
-);
+mongoose.connect(process.env.MONGO_URL, (err) => {
+  if (err) throw err;
+});
 const jwtSecret = process.env.JWT_SECRET;
 const bcryptSalt = bcrypt.genSaltSync(10);
 
@@ -28,13 +27,6 @@ app.use(
     origin: process.env.CLIENT_URL,
   })
 );
-const configuration = new Configuration({
-  apiKey: process.env.OPEN_AI_KEY,
-});
-const openai = new OpenAIApi(configuration);
-app.get("/", (req, res) => {
-  res.send("hello");
-});
 
 async function getUserDataFromRequest(req) {
   return new Promise((resolve, reject) => {
@@ -105,11 +97,9 @@ app.post("/login", async (req, res) => {
 app.post("/logout", (req, res) => {
   res.cookie("token", "", { sameSite: "none", secure: true }).json("ok");
 });
-app.get("/", (req, res) => {
-  res.send("hello");
-});
+
 app.post("/register", async (req, res) => {
-  const { username, password, email } = req.body;
+  const { username, email, password } = req.body;
   try {
     const hashedPassword = bcrypt.hashSync(password, bcryptSalt);
     const createdUser = await User.create({
@@ -136,35 +126,8 @@ app.post("/register", async (req, res) => {
     res.status(500).json("error");
   }
 });
-app.post("/myreq", async (req, res) => {
-  const { sender, recipient, text } = req.body;
-  const mydata = await openai.createCompletion({
-    model: "text-davinci-003",
-    prompt: `
-              ${text}
-      
-              ###
-            `,
-    max_tokens: 64,
-    temperature: 0,
-    top_p: 1.0,
-    frequency_penalty: 0.0,
-    presence_penalty: 0.0,
-    stop: ["\n"],
-  });
-  const messageDoc = await Message.create({
-    sender: recipient,
-    recipient: sender,
-    text: mydata.data.choices[0].text,
-    file: null,
-  });
-  console.log(mydata.data.choices[0].text);
 
-  res.send(mydata.data.choices[0].text);
-});
-const PORT = process.env.PORT;
-
-const server = app.listen(PORT);
+const server = app.listen(4040);
 
 const wss = new ws.WebSocketServer({ server });
 wss.on("connection", (connection, req) => {
@@ -190,7 +153,6 @@ wss.on("connection", (connection, req) => {
       clearInterval(connection.timer);
       connection.terminate();
       notifyAboutOnlinePeople();
-      console.log("dead");
     }, 1000);
   }, 5000);
 
