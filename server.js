@@ -26,6 +26,10 @@ app.use(
   })
 );
 
+app.get("/", (req, res) => {
+  res.send("hello");
+});
+
 async function getUserDataFromRequest(req) {
   return new Promise((resolve, reject) => {
     const token = req.cookies?.token;
@@ -95,9 +99,11 @@ app.post("/login", async (req, res) => {
 app.post("/logout", (req, res) => {
   res.cookie("token", "", { sameSite: "none", secure: true }).json("ok");
 });
-
+app.get("/", (req, res) => {
+  res.send("hello");
+});
 app.post("/register", async (req, res) => {
-  const { username, email, password } = req.body;
+  const { username, password, email } = req.body;
   try {
     const hashedPassword = bcrypt.hashSync(password, bcryptSalt);
     const createdUser = await User.create({
@@ -124,7 +130,9 @@ app.post("/register", async (req, res) => {
     res.status(500).json("error");
   }
 });
+
 const PORT = process.env.PORT;
+
 const server = app.listen(PORT);
 
 const wss = new ws.WebSocketServer({ server });
@@ -151,6 +159,7 @@ wss.on("connection", (connection, req) => {
       clearInterval(connection.timer);
       connection.terminate();
       notifyAboutOnlinePeople();
+      console.log("dead");
     }, 1000);
   }, 5000);
 
